@@ -1,22 +1,23 @@
 
-//Usage in RAD: $L.void=jscall("recordUpdateConflicts.diff", $L.template, $L.template.current, $L.template.modified, $L.template.save)
+//Usage in RAD: $L.void=jscall("recordUpdateConflicts.diff", $L.diff.temp, $L.template.current, $L.template.modified, $L.template.save)
 /**
-     * templateInfo
-     * caption 		: 4
-     * display 		: 6
-     * field 		: 1
-     * fieldUsage 	: 7
-     * globallist 	: 5
-     * type 		: 2
-     * value 		: 3
+     * templateInfo			
+     * caption 		: 4		
+     * display 		: 6		
+     * field 		: 1		
+     * fieldUsage 	: 7		
+     * globallist 	: 5		
+     * type 		: 2		
+     * value 		: 3		
      *
      */
 
-function diff( $L_template, $L_template_current, $L_template_modified, $L_template_save ){
+function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_template_save ){
 
 	var tempInfoCurrent  = $L_template_current.templateInfo;
 	var tempInfoModified = $L_template_modified.templateInfo;
 	var tempInfoSave 	 = $L_template_save.templateInfo;
+	var diffContent		 = $L_diff_template.templateInfo;
 
 	var userXbg   = vars.$userXbg;
 	var bgXsave   = vars.$bgXsave;
@@ -38,10 +39,28 @@ function diff( $L_template, $L_template_current, $L_template_modified, $L_templa
 			// need to appear in the conflicts table.
 			if( (valueCurrent != valueSave) && (valueModified != valueSave) && (valueCurrent != valueModified) ){
 
-				$L_template.templateInfo[pos] = tempInfoModified[i];
+				//$L_template.templateInfo[pos] = tempInfoModified[i];
+				// to construct the diffContent, then show it in the conflict fields sub-format
+				// Caption
+				diffContent[pos].caption 	  = tempInfoCurrent[i].caption;
+				// original: the radio button and value
+				//diffContent[pos].add	 	= false;
+				diffContent[pos].field   = tempInfoSave[i].display;
+				// current: the radio button and value
+				//diffContent[pos].update  	= false;
+				diffContent[pos].value   = tempInfoCurrent[i].display;
+				// modified: the radio button and value
+				//diffContent[pos]["delete"]  = false;
+				diffContent[pos].display = tempInfoModified[i].display;
 
-				vars.$originalValueList.push(tempInfoSave[i].display);
-				vars.$currentValueList.push(tempInfoCurrent[i].display);
+				// Other information of this field
+				// field type
+				diffContent[pos].type = tempInfoCurrent[i].type;
+				// field index in template
+				diffContent[pos].globallist	= ""+i;
+
+				//vars.$originalValueList.push(tempInfoSave[i].display);
+				//vars.$currentValueList.push(tempInfoCurrent[i].display);
 				userXbg.push(i);// keep the position.
 
 				pos++;
@@ -80,7 +99,7 @@ function diff( $L_template, $L_template_current, $L_template_modified, $L_templa
 }
 
 
-function merge( selected, $L_template_current, $L_template, $L_file ){
+function merge( $L_template_current, $L_template_modified, $L_template_save, $L_diff_temp, $L_merge_temp, $L_file ){
 
 	try{
 		var tempInfoCurrent = $L_template_current.templateInfo;
@@ -116,7 +135,7 @@ function merge( selected, $L_template_current, $L_template, $L_file ){
 			}
 	
 		// transfer the vlues of template to $L.file
-		print($L_template);
+		//print($L_template);
 			
 		lib.Template.applyTemplate( $L_file, $L_template, false );
 	}
