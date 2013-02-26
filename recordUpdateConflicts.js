@@ -1,14 +1,14 @@
 
 //Usage in RAD: $L.void=jscall("recordUpdateConflicts.diff", $L.diff.temp, $L.template.current, $L.template.modified, $L.template.save)
 /**
-     * templateInfo			
-     * caption 		: 4		
-     * display 		: 6		
-     * field 		: 1		
-     * fieldUsage 	: 7		
-     * globallist 	: 5		
-     * type 		: 2		
-     * value 		: 3		
+     * templateInfo			fields used in $L_diff_temp:
+     * caption 		: 4		Caption    : field caption
+     * display 		: 6		field 	   : original value
+     * field 		: 1		value 	   : current value
+     * fieldUsage 	: 7		display    : modified value
+     * globallist 	: 5		type 	   : field type
+     * type 		: 2		globallist : field index in each template
+     * value 		: 3		fieldUsage : radio button
      *
      */
 
@@ -22,6 +22,9 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 	var userXbg   = vars.$userXbg;
 	var bgXsave   = vars.$bgXsave;
 	var userXsave = vars.$userXsave;
+	
+	vars.$userCaptions = [];
+	vars.$userValues = [];
 
 	var lng = system.functions.lng(system.functions.denull( tempInfoCurrent ));
 	//print(lng);
@@ -58,6 +61,9 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 				diffContent[pos].type = tempInfoCurrent[i].type;
 				// field index in template
 				diffContent[pos].globallist	= ""+i;
+				
+				// radio button checked default by user
+				diffContent[pos].fieldUsage = "3";
 
 				//vars.$originalValueList.push(tempInfoSave[i].display);
 				//vars.$currentValueList.push(tempInfoCurrent[i].display);
@@ -72,6 +78,8 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 			if( valueCurrent != valueSave && valueModified == valueSave ){
 
 				userXsave.push(i);
+				vars.$userCaptions.push(tempInfoCurrent[i].caption);
+				vars.$userValues.push(valueCurrent);
 				continue;
 
 			}
@@ -102,9 +110,15 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 function merge( $L_template_current, $L_template_modified, $L_template_save, $L_diff_temp, $L_merge_temp, $L_file ){
 
 	try{
-		var tempInfoCurrent = $L_template_current.templateInfo;
-		var tempInfo 		= $L_template.templateInfo;
-		var position		= system.functions.lng(system.functions.denull(tempInfo));
+		
+		var tempInfoCurrent  = $L_template_current.templateInfo;
+		var tempInfoModified = $L_template_modified.templateInfo;
+		var tempInfoSave 	 = $L_template_save.templateInfo;
+		var diffContent		 = $L_diff_temp.templateInfo;
+		print(diffContent);
+
+		var tempInfo 		= $L_merge_temp.templateInfo;
+		var position		= 0;
 	
 		var userXbg   = vars.$userXbg;
 		var bgXsave   = vars.$bgXsave;
@@ -112,12 +126,42 @@ function merge( $L_template_current, $L_template_modified, $L_template_save, $L_
 
 		// apply the conflicts for which user chooses to merge.
 		if( system.functions.lng(system.functions.denull(userXbg)) >0 ){
-			for( var i = 0; i<system.functions.lng(system.functions.denull(selected)); i++ ){
-	
-					var idx = selected[i] - 1;
-					//print("[JS: tempInfo.current ]" + tempInfoCurrent[userXbg[idx]]);
-					//print("[JS: tempInfo ]" + tempInfo[idx]);
-					tempInfo[idx] = tempInfoCurrent[ userXbg[idx] ];
+			for( var i = 0; i<system.functions.lng(system.functions.denull(diffContent)); i++ ){
+					
+					if(diffContent[i].caption == null || diffContent[position].caption == "") continue;
+
+					var idx = diffContent[i].globallist; //get the template index of conflicted field, transfer string to int. 
+					
+					switch(diffContent[i].fieldUsage){
+
+						case "1":
+							tempInfo[position] = tempInfoSave[idx];
+							print("JS merge: switch 1");
+							print(idx);
+							print(tempInfoSave[idx]);
+							break;
+
+						case "2":
+							tempInfo[position] = tempInfoModified[idx];
+							print("JS merge: switch 2");
+							print(idx);
+							print(tempInfoCurrent[idx]);
+							break;
+
+						case "3":
+							tempInfo[position] = tempInfoCurrent[idx];
+							print("JS merge: switch 3");
+							print(idx);
+							print(tempInfoModified[idx]);
+							break;
+
+						default:
+							tempInfo[position] = tempInfoCurrent[idx];
+							break;
+
+					}
+
+					position++;
 	
 			}
 		}
@@ -137,7 +181,7 @@ function merge( $L_template_current, $L_template_modified, $L_template_save, $L_
 		// transfer the vlues of template to $L.file
 		//print($L_template);
 			
-		lib.Template.applyTemplate( $L_file, $L_template, false );
+		lib.Template.applyTemplate( $L_file, $L_merge_temp, false );
 	}
 	catch(e){
 		print(e);

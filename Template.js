@@ -21,7 +21,7 @@ var template;
 *   
 */
 
-function getTemplateFields(newTemplate, old, add) 
+function getTemplateFields(newTemplate, old, add, isCheckSys) 
 {
 	template = newTemplate;
 	
@@ -80,7 +80,7 @@ function getTemplateFields(newTemplate, old, add)
 						{
 							if ( table.field[i].type != 8 )
 							{
-								if ( getDatadictInfo(table.field[i].name, pos) )
+								if ( getDatadictInfo(table.field[i].name, pos, isCheckSys) )
 								{
 									template.templateInfo[pos].field = table.field[i].name;
 									template.templateInfo[pos].type  = ""+table.field[i].type;
@@ -93,7 +93,7 @@ function getTemplateFields(newTemplate, old, add)
 								i++;
 								if ( table.field[i].type != 9 )
 								{
-									if ( getDatadictInfo(table.field[i].name, pos) )
+									if ( getDatadictInfo(table.field[i].name, pos, isCheckSys) )
 									{
 										template.templateInfo[pos].field = table.field[i].name;
 										template.templateInfo[pos].type  = "8." + (table.field[i].type);
@@ -125,7 +125,10 @@ function getTemplateFields(newTemplate, old, add)
 		{
 			template.templateInfo[pos].field = object.watch_variables[i];
 			template.templateInfo[pos].type  = object.watch_variable_type[i];
-			template.templateInfo[pos].caption = object.watch_variable_name[i];
+			//template.templateInfo[pos].caption = object.watch_variable_name[i];
+			var caption = system.functions.scmsg(object.watch_variable_name[i], "Caption:"+template.tablename);
+			if (caption.indexOf("Could not be found") >= 0) template.templateInfo[pos].caption = object.watch_variable_name[i];
+			else template.templateInfo[pos].caption = caption;
 			template.templateInfo[pos].globallist = object.watch_variable_global_list[i];
 			
 			if ( object.watch_variable_type[i] == "D" )
@@ -146,20 +149,23 @@ function getTemplateFields(newTemplate, old, add)
 	return true;
 }
 
-function getDatadictInfo( name, position)
+function getDatadictInfo( name, position, isCheckSys)
 {
 	var x;
 	x = system.functions.index( name, datadict.fields ) - 1;
 	
 	if ( x !=-1 && x != null )
 	{
-		if ( datadict.sysFieldType[x] == 1 || datadict.sysFieldType[x] == 4  )
+		if ( (datadict.sysFieldType[x] == 1 || datadict.sysFieldType[x] == 4) && !isCheckSys )
 		{
 			return false;
 		}
 		if ( datadict.system_fields[x] != true )
 		{
-			template.templateInfo[position].caption = datadict.captions[x];
+			//template.templateInfo[position].caption = datadict.captions[x];
+			var captionStr = system.functions.scmsg(name,"Caption:"+template.tablename);
+			if (captionStr.indexOf("Could not be found") >= 0) template.templateInfo[position].caption = name;
+			else template.templateInfo[position].caption = captionStr;
 											
 			
 			template.templateInfo[position].globallist = datadict.globallist[x];
@@ -267,6 +273,12 @@ function makeTemplateInfoArray( value )
         }
 
         var strValueString = new String(value);
+        //For fixing QCCR1E84548
+        if (strValueString == '{}')
+        {
+        		return [];
+        }
+        
         var iType;
         
         if (strValueString.indexOf("{\"") == 0)
@@ -386,7 +398,10 @@ function applyTemplate( $L_file, $L_temp, bMassUpdate ) {
             if( value != null && value != "" ) {
                 if( type < TYPE_Array ) {
                     if( type == TYPE_DateTime ) {
-                        parseDateTimeType( $L_file, templateInfo[i], field, value, bMassUpdate );
+                    	// assume that user will always refill datetime field, so not using the value in the template
+                    	// besides, the implementation of parseDateTimeType is full of hole, as we don't have a convincing
+                    	// logic of how to use the value rightly, just omit it right now
+                        // parseDateTimeType( $L_file, templateInfo[i], field, value, bMassUpdate );
                     }else {
 //                        $L_file[ field ] = _val( replaceStr( _str( value ) ), type );
                         $L_file[ field ] = _val( _str( value ), type );
@@ -410,7 +425,7 @@ function applyTemplate( $L_file, $L_temp, bMassUpdate ) {
             value = null;
         }
         
-        if( ! bField ) {
+        if( !bField && field != null && field != "" ) {
 //            $L.void=evaluate(parse(str($L.field.name)+"=$L.field", 11))
             _evaluate( _parse( "$L.t.e.m.p=NULL", TYPE_Expression ) );
             vars.$L_t_e_m_p = value;
