@@ -26,6 +26,8 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 	vars.$userCaptions = [];
 	vars.$userValues = [];
 
+	var form = new XML("form");
+
 	var lng = system.functions.lng(system.functions.denull( tempInfoCurrent ));
 	//print(lng);
 
@@ -74,12 +76,21 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 
 			}
 
-			// need to be auto-merged.
+			// need to be appeared in the "user modified only" section and auto-merged.
 			if( valueCurrent != valueSave && valueModified == valueSave ){
 
 				userXsave.push(i);
-				vars.$userCaptions.push(tempInfoCurrent[i].caption);
-				vars.$userValues.push(valueCurrent);
+				//vars.$userCaptions.push(tempInfoCurrent[i].caption);
+				//vars.$userValues.push(valueCurrent);
+
+				if(tempInfoCurrent[i].type=="8.2") var node = form.addElement("textarea");
+				else var node = form.addElement("text");
+
+				node.setAttributeValue("id", "idx"+i);
+				node.setAttributeValue("label", tempInfoCurrent[i].caption);
+				node.setAttributeValue("readonly", true);
+				node.setValue(tempInfoCurrent[i].display);
+
 				continue;
 
 			}
@@ -95,6 +106,7 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 
 		}
 
+		$L_diff_template.folder=form.toXMLString();
 
 		print("[JS diff: $userXsave ]" + userXsave);
 		print("[JS diff: $bgXsave ]" + bgXsave);
