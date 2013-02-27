@@ -1,0 +1,13 @@
+<form>
+	<text id="append.query" label="Append Query:"/>
+	<checkbox id="approvals" label="Can Approve">true</checkbox>
+	<checkbox id="approve.delegate" label="Can Delegate Approvals">true</checkbox>
+	<text button="4001" id="default.category" label="Default Category:"/>
+	<text button="4002" id="initial.format" label="Initial Format:"/>
+	<text button="4003" id="initial.request.inbox" label="Initial Change View:">Open Changes Assigned to My Group</text>
+	<checkbox id="partial.key" label="Allow Inefficient Query">true</checkbox>
+	<text button="4004" id="qbe.format" label="List Format:"/>
+	<checkbox id="reopen" label="Reopen"/>
+	<text button="4005" id="request.manage.format" label="Change Manage Format:">sc.manage.cmr</text>
+	<checkbox id="skip.warning" label="Skip Inefficient Query Warning">true</checkbox>
+</form>
