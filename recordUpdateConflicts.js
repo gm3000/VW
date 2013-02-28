@@ -12,6 +12,12 @@
      *
      */
 
+var IGNORE_FIELDS={ "#operator":"",
+					"sysmodtime":"",
+					"sysmoduser":"",
+					"sysmodcount":"",
+					"date.entered":"" };
+
 function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_template_save ){
 
 	var tempInfoCurrent  = $L_template_current.templateInfo;
@@ -22,9 +28,6 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 	var userXbg   = vars.$userXbg;
 	var bgXsave   = vars.$bgXsave;
 	var userXsave = vars.$userXsave;
-	
-	vars.$userCaptions = [];
-	vars.$userValues = [];
 
 	var form = new XML("form");
 
@@ -37,6 +40,8 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 
 		for( var i=0; i< lng; i++){
 	
+			if( tempInfoCurrent[i].field in IGNORE_FIELDS ) continue;
+			
 			var valueCurrent  = system.functions.str( tempInfoCurrent[i].value );
 			var valueModified = system.functions.str( tempInfoModified[i].value );
 			var valueSave 	  = system.functions.str( tempInfoSave[i].value);
