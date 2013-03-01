@@ -18,62 +18,64 @@ var IGNORE_FIELDS={ "#operator":"",
 					"sysmodcount":"",
 					"date.entered":"" };
 
-function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_template_save ){
+function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_template_save ){
 
 	var tempInfoCurrent  = $L_template_current.templateInfo;
 	var tempInfoModified = $L_template_modified.templateInfo;
 	var tempInfoSave 	 = $L_template_save.templateInfo;
-	var diffContent		 = $L_diff_template.templateInfo;
+	var diffContent		 = $L_diff_result.conflicts;
+	var userContent		 = $L_diff_result.usermodified;
 
 	var userXbg   = vars.$userXbg;
 	var bgXsave   = vars.$bgXsave;
 	var userXsave = vars.$userXsave;
 
-	var form = new XML("form");
-
 	var lng = system.functions.lng(system.functions.denull( tempInfoCurrent ));
 	//print(lng);
 
 	var pos = 0;
+	var upos = 0;
 
 	try{
 
 		for( var i=0; i< lng; i++){
 	
-			if( tempInfoCurrent[i].field in IGNORE_FIELDS ) continue;
-			
 			var valueCurrent  = system.functions.str( tempInfoCurrent[i].value );
 			var valueModified = system.functions.str( tempInfoModified[i].value );
 			var valueSave 	  = system.functions.str( tempInfoSave[i].value);
 	
-			// need to appear in the conflicts table.
+			// conflicts: need to appear in the conflicts table.
 			if( (valueCurrent != valueSave) && (valueModified != valueSave) && (valueCurrent != valueModified) ){
 
+				if( tempInfoCurrent[i].field in IGNORE_FIELDS ) {
+					userXbg.push(i);
+					continue;
+				}
+
+				vars.$L_conflict=true;
 				//$L_template.templateInfo[pos] = tempInfoModified[i];
 				// to construct the diffContent, then show it in the conflict fields sub-format
 				// Caption
 				diffContent[pos].caption 	  = tempInfoCurrent[i].caption;
 				// original: the radio button and value
 				//diffContent[pos].add	 	= false;
-				diffContent[pos].field   = tempInfoSave[i].display;
+				diffContent[pos].origin   = tempInfoSave[i].display;
 				// current: the radio button and value
 				//diffContent[pos].update  	= false;
-				diffContent[pos].value   = tempInfoCurrent[i].display;
+				diffContent[pos].unsaved   = tempInfoCurrent[i].display;
 				// modified: the radio button and value
 				//diffContent[pos]["delete"]  = false;
-				diffContent[pos].display = tempInfoModified[i].display;
+				diffContent[pos].dbvalue = tempInfoModified[i].display;
 
 				// Other information of this field
 				// field type
 				diffContent[pos].type = tempInfoCurrent[i].type;
 				// field index in template
-				diffContent[pos].globallist	= ""+i;
+				diffContent[pos].idx	= ""+i;
 				
 				// radio button checked default by user
-				diffContent[pos].fieldUsage = "3";
+				diffContent[pos].choice = "3";
 
-				//vars.$originalValueList.push(tempInfoSave[i].display);
-				//vars.$currentValueList.push(tempInfoCurrent[i].display);
 				userXbg.push(i);// keep the position.
 
 				pos++;
@@ -81,26 +83,29 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 
 			}
 
-			// need to be appeared in the "user modified only" section and auto-merged.
+			// user modified only: need to be appeared in the "user modified only" section and auto-merged.
 			if( valueCurrent != valueSave && valueModified == valueSave ){
 
+				if( tempInfoCurrent[i].field in IGNORE_FIELDS ) {
+					userXsave.push(i);
+					continue;
+				}
+
+				userContent[upos].ucaption = tempInfoCurrent[i].caption;
+				userContent[upos].uorigin  = tempInfoSave[i].display;
+				userContent[upos].uunsaved = tempInfoCurrent[i].display;
+				userContent[upos].utype	   = tempInfoCurrent[i].type;
+				userContent[upos].uidx	   = ""+i;
+				userContent[upos].uchoice  = "3";
+
 				userXsave.push(i);
-				//vars.$userCaptions.push(tempInfoCurrent[i].caption);
-				//vars.$userValues.push(valueCurrent);
-
-				if(tempInfoCurrent[i].type=="8.2") var node = form.addElement("textarea");
-				else var node = form.addElement("text");
-
-				node.setAttributeValue("id", "idx"+i);
-				node.setAttributeValue("label", tempInfoCurrent[i].caption);
-				node.setAttributeValue("readonly", true);
-				node.setValue(tempInfoCurrent[i].display);
+				upos++;
 
 				continue;
 
 			}
 
-			// already in the modified file.
+			// background modifeied only.
 			if( valueCurrent == valueSave && valueModified != valueSave ){
 
 				bgXsave.push(i);
@@ -110,8 +115,6 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 
 
 		}
-
-		$L_diff_template.folder=form.toXMLString();
 
 		print("[JS diff: $userXsave ]" + userXsave);
 		print("[JS diff: $bgXsave ]" + bgXsave);
@@ -124,15 +127,17 @@ function diff( $L_diff_template, $L_template_current, $L_template_modified, $L_t
 }
 
 
-function merge( $L_template_current, $L_template_modified, $L_template_save, $L_diff_temp, $L_merge_temp, $L_file ){
+function merge( $L_template_current, $L_template_modified, $L_template_save, $L_diff_result, $L_merge_temp, $L_file, $L_file_current, $L_file_save ){
 
 	try{
 		
 		var tempInfoCurrent  = $L_template_current.templateInfo;
 		var tempInfoModified = $L_template_modified.templateInfo;
 		var tempInfoSave 	 = $L_template_save.templateInfo;
-		var diffContent		 = $L_diff_temp.templateInfo;
+		var diffContent		 = $L_diff_result.conflicts;
+		var userContent      = $L_diff_result.usermodified;
 		print(diffContent);
+		print(userContent);
 
 		var tempInfo 		= $L_merge_temp.templateInfo;
 		var position		= 0;
@@ -141,66 +146,77 @@ function merge( $L_template_current, $L_template_modified, $L_template_save, $L_
 		var bgXsave   = vars.$bgXsave;
 		var userXsave = vars.$userXsave;
 
+		// date time field is not supported by Template script, we need cache it and apply the choice separately.
+		var dateTimeField = {};
+
 		// apply the conflicts for which user chooses to merge.
 		if( system.functions.lng(system.functions.denull(userXbg)) >0 ){
 			for( var i = 0; i<system.functions.lng(system.functions.denull(diffContent)); i++ ){
 					
-					if(diffContent[i].caption == null || diffContent[position].caption == "") continue;
+					if(diffContent[i].caption == null || diffContent[i].caption == "") continue;
 
-					var idx = diffContent[i].globallist; //get the template index of conflicted field, transfer string to int. 
-					
-					switch(diffContent[i].fieldUsage){
+					var idx = diffContent[i].idx; //get the template index of conflicted field. 
 
-						case "1":
-							tempInfo[position] = tempInfoSave[idx];
-							print("JS merge: switch 1");
-							print(idx);
-							print(tempInfoSave[idx]);
-							break;
-
-						case "2":
-							tempInfo[position] = tempInfoModified[idx];
-							print("JS merge: switch 2");
-							print(idx);
-							print(tempInfoCurrent[idx]);
-							break;
-
-						case "3":
-							tempInfo[position] = tempInfoCurrent[idx];
-							print("JS merge: switch 3");
-							print(idx);
-							print(tempInfoModified[idx]);
-							break;
-
-						default:
-							tempInfo[position] = tempInfoCurrent[idx];
-							break;
-
+					// date time field is not supported by Template script, we need cache it and apply the choice separately.
+					if(diffContent[i].type == "3"){
+						dateTimeField[tempInfoSave[idx].field] = diffContent[i].choice;
+						continue;
 					}
 
+					tempInfo[position] = applyChoice(tempInfoSave[idx], tempInfoCurrent[idx], tempInfoModified[idx], diffContent[i].choice);
+				
 					position++;
 	
 			}
 		}
-		// auto apply the merge with none conflicts fields.
-		for( var j = 0; j<system.functions.lng(system.functions.denull(userXsave)); j++ ){
+		
+		// apply the merge with user modified only fields.
+		for( var j = 0; j<system.functions.lng(system.functions.denull(userContent)); j++ ){
 
-			var idx = userXsave[j];
-			//print("[JS merge: auto: idx]" + idx + userXsave);
-			//print("[JS merge: auto: tempInfo position]" + position);
-			//print("[JS merge: auto: tempInfoCurrent]" + tempInfoCurrent[idx]);
+			if(userContent[j].ucaption == null || userContent[j].ucaption == "") continue;
 
-			tempInfo[position] = tempInfoCurrent[idx];
+			var idx = userContent[j].uidx;
+
+			// date time field is not supported by Template script, we need cache it and apply the choice separately.
+			if(userContent[j].utype == "3"){
+				dateTimeField[tempInfoSave[idx].field] = userContent[i].uchoice;
+				continue;
+			}
+
+			tempInfo[position] = applyChoice(tempInfoSave[idx], tempInfoCurrent[idx], tempInfoModified[idx], userContent[j].uchoice);
+			
 			position++;
 
 			}
+			
 	
 		// transfer the vlues of template to $L.file
-		//print($L_template);
+		//print($L_merge_temp);
 			
 		lib.Template.applyTemplate( $L_file, $L_merge_temp, false );
+
+		// apply datetime field choice.
+		for(var field in dateTimeField){
+
+			$L_file[field] = applyChoice( $L_file_save[field], $L_file_current[field], $L_file[field], dateTimeField[field] );	
+			
+		} 
+
 	}
 	catch(e){
 		print(e);
 	}
+
+}
+
+function applyChoice(saveVersion, currentVersion, modifiedVersion, choice){
+
+		switch(choice){
+
+			case "1": return saveVersion;
+			case "2": return modifiedVersion;
+			case "3": return currentVersion;
+			default : return currentVersion;
+		}
+
 }
