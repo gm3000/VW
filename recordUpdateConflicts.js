@@ -30,6 +30,9 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 	var bgXsave   = vars.$bgXsave;
 	var userXsave = vars.$userXsave;
 
+	//1:conflicts; 2:no conflict; 3:system conflict
+	var rc = 2;
+
 	var lng = system.functions.lng(system.functions.denull( tempInfoCurrent ));
 	//print(lng);
 
@@ -52,7 +55,13 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 					continue;
 				}
 
-				vars.$L_conflict=true;
+				// determine if the conflict is on system fields, if it is, then stop all the rest works.
+				if(tempInfoCurrent[i].fieldUsage == "1") {
+					rc = 3;
+					return rc;
+				}
+
+				rc = 1;
 				//$L_template.templateInfo[pos] = tempInfoModified[i];
 				// to construct the diffContent, then show it in the conflict fields sub-format
 				// Caption
@@ -126,6 +135,8 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 		print("[JS diff: $userXsave ]" + userXsave);
 		print("[JS diff: $bgXsave ]" + bgXsave);
 		print("[JS diff: $userXbg ]" + userXbg);
+
+		return rc;
 	}
 	catch(e){
 		print(e);
@@ -147,7 +158,7 @@ function sort(content){
 
 function rule(former, latter){
 	//sort rule: Application(2), Data(3),System(1), Deprecated(4)
-	var rules = new Array(2, 3 ,1, 4);
+	var rules = new Array("2", "3" ,"1", "4");
 	var isExchange = true;
 	var reference = -1;
 	for (var i=0; i < rules.length; i++){
