@@ -75,6 +75,9 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 				
 				// radio button checked default by user
 				diffContent[pos].choice = "3";
+				
+				// sort by usage type
+				diffContent[pos].fieldusage = tempInfoCurrent[i].fieldUsage;
 
 				userXbg.push(i);// keep the position.
 
@@ -97,6 +100,7 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 				userContent[upos].utype	   = tempInfoCurrent[i].type;
 				userContent[upos].uidx	   = ""+i;
 				userContent[upos].uchoice  = "3";
+				userContent[upos].ufieldusage = tempInfoCurrent[i].fieldUsage;
 
 				userXsave.push(i);
 				upos++;
@@ -115,6 +119,9 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 
 
 		}
+		
+		sort(diffContent);
+		sort(userContent);
 
 		print("[JS diff: $userXsave ]" + userXsave);
 		print("[JS diff: $bgXsave ]" + bgXsave);
@@ -124,6 +131,39 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 		print(e);
 	}	
 
+}
+
+function sort(content){
+	for (var i = 0; i < content.length-1; i++){
+		for (var j = content.length-1; j > i; j--){
+			if (rule(content[j-1].fieldusage, content[j].fieldusage)){
+				var temp = content[j-1];
+				content[j-1] = content[j];
+				content[j] = temp;
+			}
+		}
+	}
+}
+
+function rule(former, latter){
+	//sort rule: Application(2), Data(3),System(1), Deprecated(4)
+	var rules = new Array(2, 3 ,1, 4);
+	var isExchange = true;
+	var reference = -1;
+	for (var i=0; i < rules.length; i++){
+		if (former != null && latter != null){
+			if (former==rules[i] || latter==rules[i]){
+				if (former==rules[i]) isExchange = false;
+				break;
+			}
+		} else if (latter == null){
+			isExchange = false;
+			break;
+		}
+		
+	}
+	
+	return isExchange;
 }
 
 
@@ -179,7 +219,7 @@ function merge( $L_template_current, $L_template_modified, $L_template_save, $L_
 
 			// date time field is not supported by Template script, we need cache it and apply the choice separately.
 			if(userContent[j].utype == "3"){
-				dateTimeField[tempInfoSave[idx].field] = userContent[i].uchoice;
+				dateTimeField[tempInfoSave[idx].field] = userContent[j].uchoice;
 				continue;
 			}
 
