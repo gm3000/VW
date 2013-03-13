@@ -271,3 +271,27 @@ function applyChoice(saveVersion, currentVersion, modifiedVersion, choice){
 		}
 
 }
+
+function genQuery(record){
+
+	var query = "";
+	var fileName = system.functions.filename(record);
+	var datadict = new SCFile("datadict");
+	var recordName = system.functions.scmsg(fileName,"tablename");
+	var keys = null;
+
+	if( datadict.doSelect("name=\"" + fileName + "\"") == RC_SUCCESS ) keys = datadict.unique_key;
+    else {
+        print("Error: Can not open Data Policy for file " + fileName);
+        return null;
+    }
+
+    query = keys[0] + "=\"" + record[keys[0]] + "\"";
+    for(var i = 1; i<keys.length(); i++){
+
+    	query = query + " and " + keys[i] + "=\"" + record[keys[i]] + "\"";
+    }
+
+    return query;
+
+}
