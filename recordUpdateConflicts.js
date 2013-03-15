@@ -187,8 +187,6 @@ function merge( $L_template_current, $L_template_modified, $L_template_save, $L_
 		var tempInfoSave 	 = $L_template_save.templateInfo;
 		var diffContent		 = $L_diff_result.conflicts;
 		var userContent      = $L_diff_result.usermodified;
-		print(diffContent);
-		print(userContent);
 
 		var tempInfo 		= $L_merge_temp.templateInfo;
 		var position		= 0;
