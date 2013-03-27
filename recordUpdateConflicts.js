@@ -1,20 +1,34 @@
 /**
-     * templateInfo			
-     * caption 		: 4		
-     * display 		: 6		
-     * field 		: 1		
-     * fieldUsage 	: 7		
-     * globallist 	: 5		
-     * type 		: 2		
-     * value 		: 3		
-     *
-     */
+* @fileOverview  Provide the functionality of diff and merge records
+* @author Ryan
+* @date March 2013
+*/
 
-var IGNORE_FIELDS={ "#operator":"",
-					"sysmodtime":"",
-					"sysmoduser":"",
-					"sysmodcount":"",
-					"date.entered":"" };
+					
+var IGNORE_FIELDS={
+"cm3r":{"#operator":"", 
+		"sysmodtime":"", 
+		"sysmoduser":"", 
+		"sysmodcount":"", 
+		"date.entered":""
+		},
+"device":{},
+"rootcause":{},
+"probsummary":{},
+"incidents":{},
+"cm3t":{"id":""}
+};		
+
+/**
+* @public
+* @description  Differentiate the un-saved record and db record
+* @param {record} L_diff_result - RecordDiffRsult
+* @param {record} L_template_current - Template current
+* @param {record} L_template_modified - Template db
+* @param {record} L_template_save - Template un saved
+* @return {int} rc - 1=conflicts 2=no conflicts 3=system fields 
+*/
+
 
 function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_template_save ){
 
@@ -23,6 +37,7 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 	var tempInfoSave 	 = $L_template_save.templateInfo;
 	var diffContent		 = $L_diff_result.conflicts;
 	var userContent		 = $L_diff_result.usermodified;
+	var tableName 		 = $L_template_current.tablename;
 
 	var userXbg   = vars.$userXbg;
 	var bgXsave   = vars.$bgXsave;
@@ -46,8 +61,7 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 	
 			// Conflict fields
 			if( (valueCurrent != valueSave) && (valueModified != valueSave) && (valueCurrent != valueModified) ){
-
-				if( tempInfoCurrent[i].field in IGNORE_FIELDS ) {
+				if(isIgnoreField(tableName, tempInfoCurrent[i].field)) {
 					userXbg.push(i);
 					continue;
 				}
@@ -89,8 +103,7 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 
 			// User modified-only fields
 			if( valueCurrent != valueSave && valueModified == valueSave ){
-
-				if( tempInfoCurrent[i].field in IGNORE_FIELDS ) {
+				if (isIgnoreField(tableName, tempInfoCurrent[i].field)){
 					userXsave.push(i);
 					continue;
 				}
@@ -137,6 +150,32 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 
 }
 
+/**
+* @private
+* @description  ignore the field
+* @param {String} tableName - table name
+* @param {String} fieldName - field name
+*  
+*/
+
+function isIgnoreField(tableName, fieldName){
+	var isIgnore = false;
+	
+	if (tableName in IGNORE_FIELDS){
+		if (fieldName in IGNORE_FIELDS[tableName])
+			isIgnore = true;
+	}
+	
+	return isIgnore;
+}
+
+/**
+* @private
+* @description  sort the field by field type
+* @param {Array} content - field type
+*  
+*/
+
 function sort(content){
 	for (var i = 0; i < content.length-1; i++){
 		for (var j = content.length-1; j > i; j--){
@@ -148,6 +187,14 @@ function sort(content){
 		}
 	}
 }
+
+/**
+* @private
+* @description  rule for ordering
+* @param {String} former - former field name
+* @param {String} latter - latter field name
+* @return{Boolean} isExchange 
+*/
 
 function rule(former, latter){
 	//sort rule: Application(2), Data(3),System(1), Deprecated(4)
@@ -170,6 +217,17 @@ function rule(former, latter){
 	return isExchange;
 }
 
+/**
+* @public
+* @description  Merge the record
+* @param {record} L_diff_result - RecordDiffRsult
+* @param {record} L_template_current - Template current
+* @param {record} L_template_modified - Template db
+* @param {record} L_template_save - Template un saved
+* @param {record} L_file - $L.file.db
+* @param {record} L_file_current - $L.file.unsave
+* @param {record} L_file_save - $L.file.save
+*/
 
 function merge( $L_template_current, $L_template_modified, $L_template_save, $L_diff_result, $L_merge_temp, $L_file, $L_file_current, $L_file_save ){
 
@@ -197,6 +255,7 @@ function merge( $L_template_current, $L_template_modified, $L_template_save, $L_
 					var idx = diffContent[i].idx; //get the template index of conflicted field. 
 
 					var field = diffContent[i].field;
+					if(diffContent[i].choice == "2") continue; //bypass RTE unknown defect
 					$L_file[field] = applyChoice( $L_file_save[field], $L_file_current[field], $L_file[field], diffContent[i].choice );	
 				
 					position++;
@@ -211,8 +270,8 @@ function merge( $L_template_current, $L_template_modified, $L_template_save, $L_
 
 			var idx = userContent[j].uidx;
 
-			var field = userContent[j].field;
-			$L_file[field] = applyChoice( $L_file_save[field], $L_file_current[field], $L_file[field], userContent[j].choice );	
+			var field = userContent[j].ufield;
+			$L_file[field] = applyChoice( $L_file_save[field], $L_file_current[field], $L_file[field], userContent[j].uchoice );	
 			
 			position++;
 
@@ -225,6 +284,16 @@ function merge( $L_template_current, $L_template_modified, $L_template_save, $L_
 
 }
 
+/**
+* @private
+* @description  return the chosen record
+* @param {String} content - field type
+* @param {String} content - field type
+* @param {String} content - field type
+* @param {String} content - field type
+* @return {Record} 
+*/
+
 function applyChoice(saveVersion, currentVersion, modifiedVersion, choice){
 
 		switch(choice){
@@ -236,6 +305,13 @@ function applyChoice(saveVersion, currentVersion, modifiedVersion, choice){
 		}
 
 }
+
+/**
+* @private
+* @description  generate the query to the record
+* @param {Record} record - record
+*  
+*/
 
 function genQuery(record){
 
