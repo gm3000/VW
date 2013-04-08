@@ -169,7 +169,7 @@ function getDatadictInfo( name, position, isCheckSys)
 											
 			
 			template.templateInfo[position].globallist = datadict.globallist[x];
-			template.templateInfo[position].fieldUsage = datadict.fieldUsage[x]
+			template.templateInfo[position].fieldUsage = (isCheckSys)?""+datadict.sysFieldType[x]:datadict.fieldUsage[x];
 		}
 		
 		else

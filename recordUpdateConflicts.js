@@ -10,13 +10,26 @@ var IGNORE_FIELDS={
 		"sysmodtime":"", 
 		"sysmoduser":"", 
 		"sysmodcount":"", 
-		"date.entered":""
-		},
-"device":{},
-"rootcause":{},
-"probsummary":{},
-"incidents":{},
-"cm3t":{"id":""}
+		"date.entered":""},
+"device":{"sysmodtime":"", 
+		"sysmoduser":"", 
+		"sysmodcount":"", 
+		"date.entered":""},
+"rootcause":{"sysmodtime":"", 
+		"sysmoduser":"", 
+		"sysmodcount":""},
+"probsummary":{"sysmodtime":"", 
+		"sysmoduser":"", 
+		"sysmodcount":"",
+		"update.time":""},
+"incidents":{"sysmodtime":"", 
+		"sysmoduser":"", 
+		"sysmodcount":""},
+"cm3t":{"id":"",
+		"sysmodtime":"", 
+		"sysmoduser":"", 
+		"sysmodcount":"", 
+		"date.entered":""}
 };		
 
 /**
@@ -138,9 +151,9 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 		sort(diffContent);
 		sort(userContent);
 
-		print("[JS diff: $userXsave ]" + userXsave);
-		print("[JS diff: $bgXsave ]" + bgXsave);
-		print("[JS diff: $userXbg ]" + userXbg);
+		//print("[JS diff: $userXsave ]" + userXsave);
+		//print("[JS diff: $bgXsave ]" + bgXsave);
+		//print("[JS diff: $userXbg ]" + userXbg);
 
 		return rc;
 	}
