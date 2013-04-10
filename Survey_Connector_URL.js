@@ -1,9 +1,9 @@
 /******************************************************
 * Module Name: Survey integration Connector for URL
 * Function: connector functions
-* Author: Ryan
+* Author: Ryan, Huang
 * Version: 1.00
-* Creation Date: Apr., 2013
+* Creation Date: Apr,08, 2013
 *******************************************************/
 
 
@@ -37,9 +37,9 @@ var ConnectorClass = Class.create({
 	prepareTaskData: function(taskData) {
 		
 		var log = this.surveyDefinition.getLogger();
-  		log.debug("Survey_Connector_URL", "Prepare mail data" + task.inRecord.surveyId);
+  		log.debug("Survey_Connector_URL", "Prepare mail data" + taskData.surveyId);
 
-  		var rc = lib.Survey_Template.updateTask(taskData);
+  		var rc = lib.Survey_Template.updateTask(taskData, this.surveyDefinition);
   		
 	},
 	
