@@ -1,36 +1,34 @@
 /**
-* @fileOverview  Provide the functionality of diff and merge records
+* @fileOverview  Provide the functionality of diff and merge records 
 * @author Ryan
 * @date March 2013
 */
-
+var IGNORE_FIELDS = {
+	"sysmodtime": "",
+	"sysmoduser": "",
+	"sysmodcount": "",
+	"update.time": "",
+	"updated.by": "",
+}
 					
-var IGNORE_FIELDS={
-"cm3r":{"#operator":"", 
-		"sysmodtime":"", 
-		"sysmoduser":"", 
-		"sysmodcount":"", 
-		"date.entered":""},
-"device":{"sysmodtime":"", 
-		"sysmoduser":"", 
-		"sysmodcount":"", 
-		"date.entered":""},
-"rootcause":{"sysmodtime":"", 
-		"sysmoduser":"", 
-		"sysmodcount":""},
-"probsummary":{"sysmodtime":"", 
-		"sysmoduser":"", 
-		"sysmodcount":"",
-		"update.time":""},
-"incidents":{"sysmodtime":"", 
-		"sysmoduser":"", 
-		"sysmodcount":""},
-"cm3t":{"id":"",
-		"sysmodtime":"", 
-		"sysmoduser":"", 
-		"sysmodcount":"", 
-		"date.entered":""}
-};		
+var IGNORE_MOD_FIELDS = {
+	"cm3r": {
+		"date.entered": ""
+	},
+	"device": {
+		"date.entered": ""
+	},
+	"rootcause": {},
+	"probsummary": {},
+	"incidents": {},
+	"cm3t": {
+		"id": "",
+		"date.entered": ""
+	},
+	"ocmq": {},
+	"ocml": {},
+	"ocmo": {}
+};
 
 /**
 * @public
@@ -174,8 +172,12 @@ function diff( $L_diff_result, $L_template_current, $L_template_modified, $L_tem
 function isIgnoreField(tableName, fieldName){
 	var isIgnore = false;
 	
-	if (tableName in IGNORE_FIELDS){
-		if (fieldName in IGNORE_FIELDS[tableName])
+	if (fieldName in IGNORE_FIELDS){
+		isIgnore = true;
+	}
+
+	if (tableName in IGNORE_MOD_FIELDS){
+		if (fieldName in IGNORE_MOD_FIELDS[tableName])
 			isIgnore = true;
 	}
 	
