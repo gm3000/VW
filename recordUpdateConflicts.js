@@ -8,7 +8,9 @@ var IGNORE_FIELDS = {
 	"sysmoduser": "",
 	"sysmodcount": "",
 	"update.time": "",
+	"update.date":"",
 	"updated.by": "",
+	"page": "",
 }
 					
 var IGNORE_MOD_FIELDS = {
