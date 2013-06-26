@@ -9,7 +9,7 @@
 
 var Class = lib.smis_Prototype.getClass();
 
-var ConnectorClass = Class.create({
+var ConnectorClass = Class.create(lib.Survey_Connector.getClass(),{
 
 	initialize: function(surveyDefinition) {
 	
@@ -20,27 +20,38 @@ var ConnectorClass = Class.create({
 
 		var log = this.surveyDefinition.getLogger();
   		log.debug("Survey_Connector_URL", "Sending out survey." + task.inRecord.surveyId);
+
+  		var date = new Date();
+  		var historyText = [];
   		
+  		var surveyId = task.inRecord.surveyId;
+  		var ticketId = task.inRecord.ticketId;
   		var mails = task.inRecord.mails;
   		for (var i = 0; i < mails.length; i++) {
   			
   			var rc = this.sendEmail(mails[i].emailAddress, mails[i].emailSubject, mails[i].emailBody)
-  			//log.debug("Survey_Connector_URL", "Email Data - " + mails[i]);	
+  			//log.debug("Survey_Connector_URL", "Email Data - " + mails[i]);
+  			this.sendLog(surveyId, ticketId, mails[i].emailAddress, date);
+  			historyText.push(mails[i].emailAddress);
+
   		};
   		
+  		var text = ticketId + "\n" + historyText.join("\n");
+  		this.sendHistory( surveyId, "Success", text, date );
+
 		return true;
 	},
 	
 	/*
 	 prepare task data according to connector type
 	*/
-	prepareTaskData: function(taskData) {
+	prepareTaskData: function(map) {
 		
 		var log = this.surveyDefinition.getLogger();
-  		log.debug("Survey_Connector_URL", "Prepare mail data" + taskData.surveyId);
+  		log.debug("Survey_Connector_URL", "Prepare mail data" + map.surveyId);
+		var mails = lib.Survey_Template.renderLocalizedMail(map, this.surveyDefinition);
 
-  		var rc = lib.Survey_Template.updateTask(taskData, this.surveyDefinition);
-  		
+		return mails;
 	},
 	
 	/*
